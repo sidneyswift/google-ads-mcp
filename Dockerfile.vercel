@@ -1,0 +1,28 @@
+# Container image for hosting this MCP server on Vercel Functions.
+# Vercel detects this file, builds the image, stores it in Vercel Container
+# Registry, and routes all traffic to it. Based on the Cloud Run Dockerfile.
+
+FROM python:3.11-slim
+
+# Install uv (fast Python package installer)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+# Copy and install only the package first. Copying api/ before the install
+# would break setuptools package auto-discovery (it would find two top-level
+# packages, ads_mcp and api, and error out).
+COPY pyproject.toml README.md LICENSE MANIFEST.in ./
+COPY ads_mcp ./ads_mcp
+
+# Install the project and its dependencies into the system Python environment
+RUN uv pip install --system .
+
+# The ASGI entrypoint module served by uvicorn below.
+COPY api ./api
+
+# Vercel sends traffic to the port in $PORT (defaults to 80). We serve the
+# ASGI app from api/index.py with uvicorn (installed as a fastmcp dependency)
+# rather than the `google-ads-mcp` entrypoint, because that entrypoint only
+# starts an HTTP server when the OAuth env vars are present.
+CMD ["/bin/sh", "-c", "uvicorn api.index:app --host 0.0.0.0 --port ${PORT:-80}"]

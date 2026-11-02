@@ -1,0 +1,7 @@
+# Dependencies for the Vercel deployment (mirrors pyproject.toml).
+# Vercel's Python runtime installs from this file at build time.
+google-ads>=31.0.0
+mcp[cli]>=1.2.0
+fastmcp>=3.2.0
+# Used by ads_mcp/config.py to parse tools_config.yaml.
+PyYAML>=6.0
